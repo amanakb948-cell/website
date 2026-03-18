@@ -148,3 +148,67 @@
 
         function startMicUI() {
             isListening = true;
+            document.getElementById('micIcon').innerText = "⭕";
+            document.getElementById('micStatus').innerText = "MIC: LISTENING";
+            document.getElementById('listeningWave').classList.remove('hidden');
+        }
+
+        function stopMicUI() {
+            isListening = false;
+            document.getElementById('micIcon').innerText = "🎤";
+            document.getElementById('micStatus').innerText = "MIC: STANDBY";
+            document.getElementById('listeningWave').classList.add('hidden');
+        }
+
+        // --- SPEECH SYNTHESIS (Speaking) ---
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.0;
+            utterance.pitch = 0.8;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- CORE CHAT LOGIC ---
+        window.handleSend = async function() {
+            const input = document.getElementById('userInput');
+            const chatBox = document.getElementById('chatBox');
+            const query = input.value.trim();
+            if (!query) return;
+
+            document.getElementById('emptyState').style.display = 'none';
+            appendMessage('user', query);
+            input.value = '';
+
+            try {
+                const result = await model.generateContent(query);
+                const responseText = await result.response.text();
+                
+                appendMessage('ai', responseText);
+                speak(responseText);
+            } catch (error) {
+                appendMessage('ai', "🚨 CRITICAL ERROR: Uplink desynchronized.");
+            }
+        };
+
+        function appendMessage(role, text) {
+            const chatBox = document.getElementById('chatBox');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-4 duration-500`;
+            
+            const inner = role === 'user' 
+                ? `<div class="bg-indigo-600 px-6 py-4 rounded-[1.5rem] rounded-tr-none shadow-xl max-w-[80%] text-sm font-medium">${text}</div>`
+                : `<div class="glass px-8 py-6 rounded-[1.5rem] rounded-tl-none border-l-2 border-indigo-500 max-w-[85%]">
+                    <div class="text-[9px] uppercase tracking-[0.3em] opacity-30 font-black mb-3 text-indigo-400">Core Response</div>
+                    <div class="text-sm leading-relaxed opacity-90">${text}</div>
+                   </div>`;
+            
+            msgDiv.innerHTML = inner;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+        }
+
+        document.getElementById('userInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
+    </script>
+</body>
+</html>
