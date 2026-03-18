@@ -3,120 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini AI Interface</title>
+    <title>Gemini Core | Voice & Vision</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            background: radial-gradient(circle at top right, #1e293b, #0f172a);
-            font-family: 'Inter', sans-serif;
-            color: #f8fafc;
+        :root {
+            --bg: radial-gradient(circle at top right, #1e293b, #0f172a);
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+            --accent: #6366f1;
+            --text: #f8fafc;
         }
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .neon-mode {
+            --bg: #050505; --glass: rgba(0, 255, 157, 0.05);
+            --border: rgba(0, 255, 157, 0.2); --accent: #00ff9d; --text: #00ff9d;
         }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
+        body { background: var(--bg); font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text); transition: 0.5s; overflow: hidden; }
+        .glass { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid var(--border); }
+        .btn-primary { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent); }
+        
+        /* Voice Wave Animation */
+        .listening .wave {
+            animation: wave 1s infinite ease-in-out;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
+        @keyframes wave {
+            0%, 100% { height: 5px; }
+            50% { height: 20px; }
         }
-        .ai-gradient {
-            background: linear-gradient(135-deg, #6366f1, #a855f7, #ec4899);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     </style>
 </head>
-<body class="h-screen flex items-center justify-center p-4">
+<body class="h-screen flex items-center justify-center p-6">
 
-    <div class="w-full max-w-4xl h-[85vh] flex flex-col glass rounded-3xl shadow-2xl overflow-hidden">
+    <div class="w-full max-w-6xl h-[90vh] flex glass rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10">
         
-        <header class="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
-            <div>
-                <h1 class="text-2xl font-bold ai-gradient">Gemini Core</h1>
-                <p class="text-xs text-slate-400">Next-Gen AI Interface</p>
+        <aside class="w-64 border-r border-white/10 hidden lg:flex flex-col p-8 bg-black/30">
+            <div class="mb-10 text-center">
+                <div class="inline-block p-3 rounded-2xl bg-indigo-500/10 mb-4">
+                    <span class="text-3xl">🤖</span>
+                </div>
+                <h2 class="text-xs uppercase tracking-[0.4em] font-black opacity-40">System Node</h2>
             </div>
-            <input type="password" id="apiKey" placeholder="Enter Gemini API Key" 
-                   class="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 transition-all w-48">
-        </header>
+            
+            <div class="space-y-4 flex-1">
+                <div class="p-4 rounded-2xl glass text-[10px] space-y-2">
+                    <p class="opacity-50">UPLINK STATE</p>
+                    <p class="font-bold text-green-400">ACTIVE // SECURE</p>
+                </div>
+                <div class="p-4 rounded-2xl glass text-[10px] space-y-2">
+                    <p class="opacity-50">BIOMETRIC LINK</p>
+                    <p id="micStatus" class="font-bold text-indigo-400">MIC: STANDBY</p>
+                </div>
+            </div>
 
-        <div id="chatBox" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-            <div class="flex flex-col items-center justify-center h-full text-slate-500 space-y-2" id="emptyState">
-                <div class="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center">✨</div>
-                <p>Enter your API key and start a conversation.</p>
-            </div>
-        </div>
+            <button onclick="toggleTheme()" class="glass p-4 rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition-all active:scale-95 group">
+                <span id="themeIcon" class="text-lg group-hover:rotate-12 transition">🌙</span> 
+                <span class="text-[10px] font-bold uppercase tracking-widest">Interface Skin</span>
+            </button>
+        </aside>
 
-        <div class="p-6 bg-white/5 border-t border-white/10">
-            <div class="relative flex items-center">
-                <input type="text" id="userInput" 
-                       placeholder="Type your message..." 
-                       class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-6 pr-16 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all">
-                <button onclick="handleSend()" 
-                        class="absolute right-3 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl font-semibold transition-all shadow-lg active:scale-95">
-                    Send
-                </button>
+        <main class="flex-1 flex flex-col">
+            <header class="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                <h1 class="text-2xl font-black tracking-tighter italic">
+                    GEMINI <span class="text-indigo-500 not-italic">OS</span>
+                </h1>
+                <div class="flex items-center gap-4">
+                    <div id="listeningWave" class="hidden flex items-center gap-1 h-5 listening">
+                        <div class="wave w-1 bg-indigo-400 rounded-full" style="animation-delay: 0.1s"></div>
+                        <div class="wave w-1 bg-indigo-400 rounded-full" style="animation-delay: 0.2s"></div>
+                        <div class="wave w-1 bg-indigo-400 rounded-full" style="animation-delay: 0.3s"></div>
+                    </div>
+                    <span class="text-[10px] opacity-30 font-mono">v3.0.1_STABLE</span>
+                </div>
+            </header>
+
+            <div id="chatBox" class="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
+                <div class="m-auto text-center" id="emptyState">
+                    <h3 class="text-3xl font-light opacity-20 mb-2">Neural Link Ready</h3>
+                    <p class="text-xs opacity-20 tracking-widest uppercase">Speak or type to initialize command</p>
+                </div>
             </div>
-        </div>
+
+            <div class="p-10 bg-white/[0.02]">
+                <div class="relative glass rounded-[1.5rem] p-2 flex items-center shadow-2xl border-white/10">
+                    <button id="micBtn" onclick="toggleMic()" class="p-4 hover:bg-white/5 rounded-xl transition-all group">
+                        <span id="micIcon" class="text-xl opacity-50 group-hover:opacity-100 group-hover:scale-110 block">🎤</span>
+                    </button>
+                    
+                    <input type="text" id="userInput" 
+                           placeholder="Enter command or speak..." 
+                           class="flex-1 bg-transparent border-none py-4 px-4 focus:outline-none text-lg placeholder:opacity-20">
+                    
+                    <button onclick="handleSend()" 
+                            class="btn-primary px-10 py-4 rounded-xl font-black tracking-widest text-xs hover:brightness-110 active:scale-95 transition-all">
+                        EXECUTE
+                    </button>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script type="module">
         import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-        window.handleSend = async function() {
-            const key = document.getElementById('apiKey').value;
-            const input = document.getElementById('userInput');
-            const chatBox = document.getElementById('chatBox');
-            const emptyState = document.getElementById('emptyState');
+        const API_KEY = "AIzaSyAq6JE5QR3FQZnodWI9e-PkoK9MQuzVGk4";
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-1.5-flash",
+            systemInstruction: "You are Gemini OS. Respond with extreme intelligence and futuristic flair. Keep voice responses very concise (1-2 sentences)."
+        });
 
-            if (!key) return alert("Please enter an API Key first!");
-            if (!input.value.trim()) return;
+        // --- THEME ENGINE ---
+        window.toggleTheme = function() {
+            document.body.classList.toggle('neon-mode');
+            document.getElementById('themeIcon').innerText = document.body.classList.contains('neon-mode') ? '⚡' : '🌙';
+        };
 
-            if (emptyState) emptyState.remove();
+        // --- SPEECH RECOGNITION (Listening) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+        let isListening = false;
 
-            // Add User Message
-            const userMsg = input.value;
-            appendMessage('user', userMsg);
-            input.value = '';
+        if (recognition) {
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('userInput').value = transcript;
+                handleSend();
+            };
+            recognition.onend = () => { stopMicUI(); };
+        }
 
-            try {
-                const genAI = new GoogleGenerativeAI(key);
-                const model = genAI.getGenerativeModel({ 
-                    model: "gemini-1.5-flash",
-                    systemInstruction: "You are a highly intelligent, sleek, and helpful AI integrated into a custom dashboard. Keep answers concise and brilliant."
-                });
-
-                const result = await model.generateContent(userMsg);
-                const response = await result.response;
-                appendMessage('ai', response.text());
-            } catch (error) {
-                appendMessage('ai', "Error: " + error.message);
+        window.toggleMic = function() {
+            if (!recognition) return alert("Speech recognition not supported in this browser.");
+            if (isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+                startMicUI();
             }
         };
 
-        function appendMessage(role, text) {
-            const chatBox = document.getElementById('chatBox');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`;
-            
-            msgDiv.innerHTML = `
-                <div class="max-w-[80%] p-4 rounded-2xl ${role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'glass text-slate-200 rounded-tl-none'}">
-                    <p class="text-sm leading-relaxed">${text}</p>
-                </div>
-            `;
-            
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        // Allow 'Enter' key to send
-        document.getElementById('userInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleSend();
-        });
-    </script>
-</body>
-</html>
+        function startMicUI() {
+            isListening = true;
